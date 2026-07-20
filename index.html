@@ -18,48 +18,6 @@
 
 <body class="locked">
 
-  <!-- Reusable lace floral corner cluster, cloned via JS -->
-  <template id="laceTemplate">
-    <svg class="lace" viewBox="0 0 220 220" aria-hidden="true">
-      <g class="lace-fill">
-        <g class="bloom">
-          <circle cx="70" cy="70" r="34" class="petal-ring" />
-          <path d="M70 70 m0 -40 a40 40 0 0 1 0 80 a40 40 0 0 1 0 -80" class="scallop" />
-          <g class="petals">
-            <ellipse cx="70" cy="34" rx="15" ry="24" />
-            <ellipse cx="70" cy="106" rx="15" ry="24" />
-            <ellipse cx="34" cy="70" rx="24" ry="15" />
-            <ellipse cx="106" cy="70" rx="24" ry="15" />
-            <ellipse cx="45" cy="45" rx="13" ry="20" transform="rotate(45 45 45)" />
-            <ellipse cx="95" cy="45" rx="13" ry="20" transform="rotate(-45 95 45)" />
-            <ellipse cx="45" cy="95" rx="13" ry="20" transform="rotate(-45 45 95)" />
-            <ellipse cx="95" cy="95" rx="13" ry="20" transform="rotate(45 95 95)" />
-          </g>
-          <circle cx="70" cy="70" r="12" class="core" />
-          <circle cx="70" cy="70" r="5" class="core-dot" />
-        </g>
-        <g class="bloom small" transform="translate(140 128) scale(.62)">
-          <g class="petals">
-            <ellipse cx="70" cy="34" rx="15" ry="24" />
-            <ellipse cx="70" cy="106" rx="15" ry="24" />
-            <ellipse cx="34" cy="70" rx="24" ry="15" />
-            <ellipse cx="106" cy="70" rx="24" ry="15" />
-            <ellipse cx="45" cy="45" rx="13" ry="20" transform="rotate(45 45 45)" />
-            <ellipse cx="95" cy="45" rx="13" ry="20" transform="rotate(-45 95 45)" />
-            <ellipse cx="45" cy="95" rx="13" ry="20" transform="rotate(-45 45 95)" />
-            <ellipse cx="95" cy="95" rx="13" ry="20" transform="rotate(45 95 95)" />
-          </g>
-          <circle cx="70" cy="70" r="12" class="core" />
-        </g>
-        <g class="leaves-svg">
-          <path d="M118 44 C150 40 180 58 196 92 C160 92 130 78 118 44 Z" />
-          <path d="M44 118 C40 150 58 180 92 196 C92 160 78 130 44 118 Z" />
-          <path d="M112 112 C140 120 160 148 168 178 C150 152 128 138 112 112 Z" />
-        </g>
-      </g>
-    </svg>
-  </template>
-
   <!-- ============================================================= -->
   <!--  SITE                                                         -->
   <!-- ============================================================= -->
@@ -653,53 +611,33 @@
   </button>
 
   <!-- ============================================================= -->
-  <!--  INTRO GATE — wax-seal envelope overlay                       -->
+  <!--  INTRO GATE — lavender lace V-flap envelope opener            -->
   <!-- ============================================================= -->
   <div class="intro" id="intro">
-    <div class="invite" id="invite">
+    <div class="env" id="env">
+      <!-- soft cinematic light sweep over the paper -->
+      <span class="env-light" aria-hidden="true"></span>
 
-      <!-- Closed card = top & bottom damask flaps (gatefold) -->
-      <div class="doors" id="doors">
-        <div class="door top">
-          <div class="door-face"></div>
-          <span class="lace-slot lace-tl"></span>
-        </div>
-        <div class="door bottom">
-          <div class="door-face"></div>
-          <span class="lace-slot lace-br"></span>
-        </div>
+      <!-- two flaps share the SAME envelope face, so the seam is
+           invisible while closed; they tear along the lace V on open -->
+      <div class="env-flap top" aria-hidden="true"></div>
+      <div class="env-flap bottom" aria-hidden="true"></div>
+
+      <!-- champagne wax seal at the V point — stays intact and rides the
+           top flap as it opens (wrapped in a plane that shares the flap's
+           3D transform-origin) -->
+      <div class="seal-layer" id="sealLayer">
+        <button class="seal" id="seal" type="button"
+          aria-label="Tap the wax seal to open the invitation">
+          <span class="seal-shadow" aria-hidden="true"></span>
+          <span class="seal-face">
+            <span class="seal-ring" aria-hidden="true"></span>
+            <span class="seal-mono">C<span class="amp">&amp;</span>R</span>
+          </span>
+        </button>
       </div>
 
-      <!-- Silk ribbon behind the seal -->
-      <div class="ribbon" aria-hidden="true">
-        <span class="ribbon-tail left"></span>
-        <span class="ribbon-tail right"></span>
-      </div>
-
-      <!-- Wax seal opener (button) — cracks at the crease -->
-      <button class="seal" id="seal" type="button" aria-label="Tap the wax seal to open the invitation">
-        <span class="seal-shard s1" aria-hidden="true"></span>
-        <span class="seal-shard s2" aria-hidden="true"></span>
-        <span class="seal-shard s3" aria-hidden="true"></span>
-        <span class="seal-half top-half">
-          <span class="seal-visual">
-            <span class="seal-ring"></span>
-            <span class="seal-monogram">
-              <span class="mono a">C</span><span class="mono amp">&amp;</span><span class="mono m">R</span>
-            </span>
-          </span>
-        </span>
-        <span class="seal-half bottom-half">
-          <span class="seal-visual">
-            <span class="seal-ring"></span>
-            <span class="seal-monogram">
-              <span class="mono a">C</span><span class="mono amp">&amp;</span><span class="mono m">R</span>
-            </span>
-          </span>
-        </span>
-      </button>
-
-      <p class="hint" id="hint">tap the wax seal to open</p>
+      <p class="env-hint" id="hint">tap the wax seal to open</p>
     </div>
   </div>
 

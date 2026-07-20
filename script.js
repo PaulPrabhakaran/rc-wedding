@@ -7,15 +7,7 @@
   var reduceMotion = window.matchMedia &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // 1) Clone the lace floral template into both corner slots ----------------
-  var laceTpl = document.getElementById("laceTemplate");
-  if (laceTpl) {
-    document.querySelectorAll(".lace-slot").forEach(function (slot) {
-      slot.appendChild(laceTpl.content.cloneNode(true));
-    });
-  }
-
-  // 2) Ambient falling leaves over every ".leaves" field --------------------
+  // 1) Ambient falling leaves over every ".leaves" field --------------------
   function populateLeaves(field, count) {
     var frag = document.createDocumentFragment();
     for (var i = 0; i < count; i++) {
@@ -43,56 +35,57 @@
     });
   }
 
-  // 3) Intro — royal envelope opener ----------------------------------------
+  // 3) Intro — lace V-flap wax-seal envelope opener ------------------------
   var body = document.body;
   var intro = document.getElementById("intro");
-  var invite = document.getElementById("invite");     // ← add this
-  var waxSeal = document.getElementById("seal");      // ← was "waxSeal", your button's real id is "seal"
-  var envParticles = document.getElementById("envParticles");
+  var waxSeal = document.getElementById("seal");
   var hero = document.getElementById("hero");
-
-  // golden dust / sparkles released as the envelope opens
-  if (envParticles && !reduceMotion) {
-    var epFrag = document.createDocumentFragment();
-    for (var ep = 0; ep < 16; ep++) {
-      var epd = document.createElement("span");
-      epd.className = "env-p";
-      var eps = (4 + Math.random() * 7).toFixed(0);
-      epd.style.width = eps + "px";
-      epd.style.height = eps + "px";
-      epd.style.left = (25 + Math.random() * 50).toFixed(1) + "%";
-      epd.style.top = (40 + Math.random() * 30).toFixed(1) + "%";
-      epd.style.setProperty("--pdx", (Math.random() * 120 - 60).toFixed(0) + "px");
-      epd.style.setProperty("--pdur", (3 + Math.random() * 2.6).toFixed(1) + "s");
-      epd.style.setProperty("--pdelay", (Math.random() * 2).toFixed(1) + "s");
-      epFrag.appendChild(epd);
-    }
-    envParticles.appendChild(epFrag);
-  }
 
   function startHeroReveal() {
     if (hero) hero.classList.add("reveal-ready");
   }
 
-  var envOpened = false;
-  function openEnvelope() {
-    if (envOpened || !intro) return;
-    envOpened = true;
-    invite.classList.add("open");     // ← was intro.classList.add("opening")
+  // Sequence: brief press → flaps rotate open (intact seal rides the top
+  // flap) → reveal the site the moment they finish. No break, no pause.
+  // Each stage only toggles a class; all motion is CSS transform/opacity.
+  var opened = false;
+  function openInvite() {
+    if (opened || !intro || !waxSeal) return;
+    opened = true;
 
-    // after the full cinematic sequence, dissolve the overlay + reveal the site
-    var settle = reduceMotion ? 400 : 1700;   // your doors/seal CSS transitions run ~1.5s, not 3.7s
+    if (reduceMotion) {
+      intro.classList.add("opening");
+      window.setTimeout(function () {
+        intro.classList.add("dismissed");
+        body.classList.remove("locked");
+        startHeroReveal();
+      }, 360);
+      return;
+    }
+
+    // Step 1 — a quick press on the intact seal
+    waxSeal.classList.add("pressing");
+
+    // Step 2 — both flaps rotate open in 3D; the seal stays whole and rides
+    // up with the top flap
+    window.setTimeout(function () {
+      waxSeal.classList.remove("pressing");
+      intro.classList.add("opening");
+    }, 160);
+
+    // Step 3 — as soon as the flaps finish opening, reveal the content with
+    // no extra delay (hero fades up via startHeroReveal)
     window.setTimeout(function () {
       intro.classList.add("dismissed");
       body.classList.remove("locked");
       startHeroReveal();
-    }, settle);
+    }, 1230);
   }
 
   if (waxSeal) {
-    waxSeal.addEventListener("click", openEnvelope);
+    waxSeal.addEventListener("click", openInvite);
     waxSeal.addEventListener("keydown", function (e) {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openEnvelope(); }
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openInvite(); }
     });
   }
 
