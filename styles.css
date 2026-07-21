@@ -3062,32 +3062,26 @@ body.no-scroll {
 .intro.opening .env-light { opacity: 0; transition: opacity .6s ease; }
 
 /* ============================================================
-   Wax seal — champagne #f1e9c7, attached to the top flap.
-   The seal-layer is a full-size, un-clipped plane that shares
-   the top flap's origin + open transform, so the intact seal
-   rides rigidly with the flap as it opens.
+   Wax seal — now drawn into the invitation image itself.
+   What remains here is only an invisible clickable hotspot,
+   positioned over the seal in the artwork, so tapping it opens
+   the invitation exactly as the code-built seal used to.
    ============================================================ */
 .seal-layer {
   position: absolute;
   inset: 0;
   z-index: 6;
-  transform-origin: top center;
-  transform: rotateX(0deg);
-  transform-style: preserve-3d;
-  transition: transform 1s cubic-bezier(.22, 1, .36, 1);
   pointer-events: none;
-  will-change: transform;
-}
-
-.intro.opening .seal-layer {
-  transform: rotateX(-168deg) translateZ(34px);
 }
 
 .seal {
   position: absolute;
   left: 50%;
-  top: 61%;   /* exactly at the lace-V crossing where the flaps meet */
-  width: clamp(92px, 12vmax, 150px);
+  top: 53%;      /* centered on the wax seal drawn into the image */
+  /* sized off the envelope HEIGHT (the seal is a fixed fraction of the
+     image height in every layout), so this square fully circumscribes the
+     seal — its whole face AND its edges are clickable — on desktop & mobile */
+  height: 22%;
   aspect-ratio: 1;
   transform: translate(-50%, -50%);
   border: 0;
@@ -3096,12 +3090,6 @@ body.no-scroll {
   cursor: pointer;
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
-  animation: seal-breathe 3.6s ease-in-out infinite;
-}
-
-@keyframes seal-breathe {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); }
-  50%      { transform: translate(-50%, -50%) scale(1.035); }
 }
 
 .seal:focus-visible {
@@ -3110,111 +3098,8 @@ body.no-scroll {
   border-radius: 50%;
 }
 
-/* small realistic shadow beneath the seal */
-.seal-shadow {
-  position: absolute;
-  left: 50%;
-  bottom: -8%;
-  width: 78%;
-  height: 22%;
-  transform: translateX(-50%);
-  background: radial-gradient(50% 50% at 50% 50%, rgba(95, 82, 55, .42), transparent 72%);
-  filter: blur(5px);
-  z-index: 0;
-}
-
-.seal-face {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  display: grid;
-  place-items: center;
-  /* organic wax silhouette + slight melt imperfections */
-  border-radius: 49% 51% 52% 48% / 53% 47% 53% 47%;
-  background:
-    radial-gradient(58% 54% at 38% 30%, #fbf1e2 0%, #f6e5cf 26%, #efd7b9 52%, #d9bd97 82%, #c4a67d 100%);
-  box-shadow:
-    inset 0 4px 8px rgba(255, 255, 255, .55),
-    inset 0 -11px 20px rgba(140, 105, 60, .5),
-    inset 0 0 0 2px rgba(196, 166, 120, .55),
-    0 3px 6px rgba(115, 88, 50, .4);
-  overflow: hidden;
-}
-
-/* glossy top highlight */
-.seal-face::before {
-  content: "";
-  position: absolute;
-  left: 18%;
-  top: 10%;
-  width: 48%;
-  height: 32%;
-  border-radius: 50%;
-  background: radial-gradient(60% 60% at 40% 30%, rgba(255, 255, 255, .78), transparent 70%);
-  filter: blur(2px);
-  z-index: 2;
-  pointer-events: none;
-}
-
-/* fine wax speckle / imperfection texture */
-.seal-face::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background-image:
-    radial-gradient(rgba(255, 255, 255, .18) 1px, transparent 1.5px),
-    radial-gradient(rgba(120, 100, 50, .16) 1px, transparent 1.5px);
-  background-size: 8px 8px, 12px 12px;
-  background-position: 0 0, 4px 5px;
-  mix-blend-mode: soft-light;
-  opacity: .6;
-  pointer-events: none;
-}
-
-.seal-ring {
-  position: absolute;
-  inset: 12%;
-  border-radius: 50%;
-  border: 1.5px solid rgba(186, 156, 108, .55);
-  box-shadow: inset 0 2px 4px rgba(140, 105, 60, .5), inset 0 -2px 4px rgba(255, 255, 255, .45);
-}
-
-/* initials in the wax colour (#efd7b9) with a thin contrasting outline,
-   so they read as embossed foil pressed into the wax */
-.seal-mono {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: .04em;
-  font-family: var(--serif);
-  font-weight: 600;
-  font-size: clamp(24px, 8.4vmin, 40px);
-  line-height: 1;
-  color: #efd7b9;
-  -webkit-text-stroke: .6px #9c7038;
-  text-shadow: 0 1px 1px rgba(255, 255, 255, .4), 0 1px 2px rgba(110, 80, 40, .5);
-}
-.seal-mono .amp {
-  font-style: italic;
-  font-weight: 500;
-  font-size: .62em;
-  margin: 0 .02em;
-  opacity: .95;
-}
-
-/* Step 1 — brief press inward on tap (seal stays whole) */
-.seal.pressing {
-  animation: none;
-  transform: translate(-50%, -50%) scale(.9);
-  transition: transform .18s cubic-bezier(.4, 0, .6, 1);
-}
-
-/* once opening, hold the seal steady while it rides the flap */
+/* once opening, drop the hotspot so it can't be re-clicked */
 .intro.opening .seal {
-  animation: none;
-  transform: translate(-50%, -50%);
   pointer-events: none;
 }
 
@@ -3254,9 +3139,9 @@ body.no-scroll {
   .env-flap {
     background-size: cover;
   }
-  .seal {
-    width: clamp(84px, 22vw, 132px);
-  }
+  /* the seal hotspot keeps its height-based square sizing here too — the
+     seal stays a fixed fraction of the (full-height) image on portrait/
+     mobile, so no width override is needed */
 }
 
 /* short / landscape screens: keep the seal from crowding the hint */

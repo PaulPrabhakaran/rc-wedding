@@ -623,21 +623,13 @@
       <div class="env-flap top" aria-hidden="true"></div>
       <div class="env-flap bottom" aria-hidden="true"></div>
 
-      <!-- champagne wax seal at the V point — stays intact and rides the
-           top flap as it opens (wrapped in a plane that shares the flap's
-           3D transform-origin) -->
+      <!-- the wax seal is now part of the invitation image itself; this is
+           just an invisible clickable hotspot sitting over the drawn seal
+           so tapping it opens the invitation exactly as before -->
       <div class="seal-layer" id="sealLayer">
-        <button class="seal" id="seal" type="button"
-          aria-label="Tap the wax seal to open the invitation">
-          <span class="seal-shadow" aria-hidden="true"></span>
-          <span class="seal-face">
-            <span class="seal-ring" aria-hidden="true"></span>
-            <span class="seal-mono">C<span class="amp">&amp;</span>R</span>
-          </span>
-        </button>
+        <button class="seal" id="seal" type="button" aria-label="Tap the wax seal to open the invitation"></button>
       </div>
 
-      <p class="env-hint" id="hint">tap the wax seal to open</p>
     </div>
   </div>
 
