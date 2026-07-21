@@ -73,13 +73,17 @@
       intro.classList.add("opening");
     }, 160);
 
-    // Step 3 — as soon as the flaps finish opening, reveal the content with
-    // no extra delay (hero fades up via startHeroReveal)
+    // Step 3 — while the flaps are still swinging open, start lifting the hero
+    // into place *behind* the veil so it's already present…
+    window.setTimeout(startHeroReveal, 1960);
+
+    // …then, the instant the flaps reach edge-on (160ms press + 2.4s open),
+    // lift the veil — the hero is revealed exactly as the flaps finish, with
+    // no bare purple background in between.
     window.setTimeout(function () {
       intro.classList.add("dismissed");
       body.classList.remove("locked");
-      startHeroReveal();
-    }, 1230);
+    }, 2560);
   }
 
   if (waxSeal) {

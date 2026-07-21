@@ -335,23 +335,23 @@ body.locked {
 }
 
 .reveal-ready [data-reveal="1"] {
-  animation-delay: .15s;
+  animation-delay: 0s;
 }
 
 .reveal-ready [data-reveal="2"] {
-  animation-delay: .45s;
+  animation-delay: .2s;
 }
 
 .reveal-ready [data-reveal="3"] {
-  animation-delay: .85s;
+  animation-delay: .4s;
 }
 
 .reveal-ready [data-reveal="4"] {
-  animation-delay: 1.10s;
+  animation-delay: .6s;
 }
 
 .reveal-ready [data-reveal="5"] {
-  animation-delay: 1.40s;
+  animation-delay: .8s;
 }
 
 @keyframes hero-rise {
@@ -2967,7 +2967,8 @@ body.no-scroll {
   place-items: center;
   overflow: hidden;
   background: linear-gradient(180deg, #ddd9f3 0%, #cdc8ea 58%, #c1bce2 100%);
-  transition: opacity 1s ease, visibility 0s linear 1s;
+  /* quick veil lift so the (already-revealed) hero crossfades in with no gap */
+  transition: opacity .45s ease, visibility 0s linear .45s;
   will-change: opacity;
 }
 
@@ -3018,7 +3019,10 @@ body.no-scroll {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   transform: rotateX(0deg);
-  transition: transform 1s cubic-bezier(.22, 1, .36, 1), box-shadow 1s ease;
+  /* slow, cinematic slow-motion open — steady ease-in-out so the flaps move
+     visibly across the WHOLE duration (not front-loaded) and reach edge-on
+     right as the reveal happens */
+  transition: transform 2.4s cubic-bezier(.42, 0, .58, 1), box-shadow 2.4s ease;
   will-change: transform;
 }
 
@@ -3049,13 +3053,17 @@ body.no-scroll {
   background: linear-gradient(0deg, transparent 40%, rgba(255, 255, 255, .22) 56%, rgba(120, 105, 160, .18) 64%);
 }
 
-/* ---- OPEN STATE: flaps rotate away in 3D with a soft cast shadow ---- */
+/* ---- OPEN STATE: flaps swing open to edge-on (90deg) in 3D ----
+   Stopping at 90deg (not past it) keeps each flap VISIBLE for the whole
+   slow-motion open — it thins to nothing exactly as the motion ends,
+   instead of flipping past 90deg and vanishing early (which left the bare
+   purple background on screen for the rest of the animation). */
 .intro.opening .env-flap.top {
-  transform: rotateX(-168deg) translateZ(34px);
+  transform: rotateX(-90deg) translateZ(24px);
   box-shadow: 0 40px 60px -20px rgba(70, 58, 110, .5);
 }
 .intro.opening .env-flap.bottom {
-  transform: rotateX(168deg) translateZ(34px);
+  transform: rotateX(90deg) translateZ(24px);
   box-shadow: 0 -40px 60px -20px rgba(70, 58, 110, .5);
 }
 .intro.opening .env-flap::after { opacity: 1; }
