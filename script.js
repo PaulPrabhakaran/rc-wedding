@@ -35,11 +35,73 @@
     });
   }
 
+  // // 2) Mouse heart trail — small hearts spawn as the cursor moves, spaced
+  // //    out with a gap rather than a solid trail. Real-mouse (hover-capable)
+  // //    devices only, and skipped entirely under reduced motion.
+  // var heartHover = window.matchMedia && window.matchMedia("(hover: hover)").matches;
+  // if (!reduceMotion && heartHover) {
+  //   var lastHeartX = null, lastHeartY = null;
+  //   var HEART_GAP = 46;   // px the pointer must travel before the next heart spawns
+  //   document.addEventListener("mousemove", function (e) {
+  //     if (lastHeartX !== null) {
+  //       var dx = e.clientX - lastHeartX, dy = e.clientY - lastHeartY;
+  //       if ((dx * dx + dy * dy) < HEART_GAP * HEART_GAP) return;
+  //     }
+  //     lastHeartX = e.clientX;
+  //     lastHeartY = e.clientY;
+
+  //     var heart = document.createElement("span");
+  //     heart.className = "mouse-heart";
+  //     heart.textContent = "💞";
+  //     heart.style.left = e.clientX + "px";
+  //     heart.style.top = e.clientY + "px";
+  //     heart.style.fontSize = (11 + Math.random() * 7).toFixed(0) + "px";
+  //     heart.style.setProperty("--hx", (Math.random() * 26 - 13).toFixed(0) + "px");
+  //     document.body.appendChild(heart);
+  //     heart.addEventListener("animationend", function () {
+  //       if (heart.parentNode) heart.parentNode.removeChild(heart);
+  //     });
+  //   }, { passive: true });
+  // }
+
   // 3) Intro — lace V-flap wax-seal envelope opener ------------------------
   var body = document.body;
   var intro = document.getElementById("intro");
   var waxSeal = document.getElementById("seal");
   var hero = document.getElementById("hero");
+  var bgMusic = document.getElementById("bgMusic");
+  var envEl = document.getElementById("env");
+  var envLoader = document.getElementById("envLoader");
+
+  // The envelope's images are large; on a first, cold-cache visit they can
+  // otherwise paint in visibly row-by-row as they stream over the network.
+  // Keep the whole envelope invisible (see .env in styles.css) until every
+  // one of them has actually finished loading, then reveal it as one
+  // complete image. A short safety timeout still reveals it regardless in
+  // case an image fails outright, so a broken asset can never leave the
+  // envelope permanently blank. #envLoader shows a spinner on the
+  // placeholder veil for that same wait, so a slow load reads as "loading"
+  // rather than a screen stuck on a flat colour.
+  if (envEl) {
+    var envAssets = ["assets/envelopBottom.png", "assets/envelopTop.png", "assets/envelopSeal.png"];
+    var remaining = envAssets.length;
+    var revealed = false;
+    function revealEnv() {
+      if (revealed) return;
+      revealed = true;
+      envEl.classList.add("ready");
+      if (envLoader) envLoader.classList.add("done");
+    }
+    envAssets.forEach(function (src) {
+      var img = new Image();
+      img.onload = img.onerror = function () {
+        remaining -= 1;
+        if (remaining <= 0) revealEnv();
+      };
+      img.src = src;
+    });
+    window.setTimeout(revealEnv, 4000);
+  }
 
   function startHeroReveal() {
     if (hero) hero.classList.add("reveal-ready");
@@ -52,6 +114,14 @@
   function openInvite() {
     if (opened || !intro || !waxSeal) return;
     opened = true;
+
+    // start the background music right on this tap — it's a genuine user
+    // gesture, so autoplay-blocking browsers allow it; .catch swallows the
+    // rare case where playback still gets refused (e.g. no audio file)
+    if (bgMusic) {
+      bgMusic.volume = 0.5;
+      bgMusic.play().catch(function () { });
+    }
 
     if (reduceMotion) {
       intro.classList.add("opening");
@@ -66,24 +136,26 @@
     // Step 1 — a quick press on the intact seal
     waxSeal.classList.add("pressing");
 
-    // Step 2 — both flaps rotate open in 3D; the seal stays whole and rides
-    // up with the top flap
+    // Step 2 — the flap cracks open a small amount in 3D (1.6s, a bit
+    // slower/more deliberate than a quick snap). The envelope's back panel
+    // (env-base) never moves at all, at any point.
     window.setTimeout(function () {
       waxSeal.classList.remove("pressing");
       intro.classList.add("opening");
+      body.classList.remove("locked");
     }, 160);
 
-    // Step 3 — while the flaps are still swinging open, start lifting the hero
-    // into place *behind* the veil so it's already present…
-    window.setTimeout(startHeroReveal, 1960);
-
-    // …then, the instant the flaps reach edge-on (160ms press + 2.4s open),
-    // lift the veil — the hero is revealed exactly as the flaps finish, with
-    // no bare purple background in between.
+    // Step 3 — start fading the whole overlay away (flap + still-static
+    // base) slightly BEFORE the flap's own lift finishes, so the fade
+    // overlaps its tail motion instead of waiting for the flap to first
+    // glide to a complete stop and only then begin fading — that dead
+    // stop-then-fade handoff was reading as a stutter/pause. Overlapping
+    // them means the flap is still visibly lifting as it dissolves into
+    // the hero, so the reveal reads as one continuous motion.
     window.setTimeout(function () {
       intro.classList.add("dismissed");
-      body.classList.remove("locked");
-    }, 2560);
+      startHeroReveal();
+    }, 160 + 1600 - 300);
   }
 
   if (waxSeal) {
@@ -135,69 +207,7 @@
     revealUps.forEach(function (el) { el.classList.add("is-in"); });
   }
 
-  // 6a) Grow the timeline line once it scrolls into view --------------------
-  var timeline = document.querySelector(".timeline");
-  if (timeline) {
-    if ("IntersectionObserver" in window) {
-      var lineIO = new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("lit");
-            lineIO.unobserve(entry.target);
-          }
-        });
-      }, { threshold: 0.15 });
-      lineIO.observe(timeline);
-    } else {
-      timeline.classList.add("lit");
-    }
-  }
-
-  // 6b) Highlight the timeline card crossing the viewport centre (story focus)
-  if ("IntersectionObserver" in window && !reduceMotion) {
-    var activeIO = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        entry.target.classList.toggle("active", entry.isIntersecting);
-      });
-    }, { rootMargin: "-42% 0px -42% 0px", threshold: 0 });
-    document.querySelectorAll(".tl-item").forEach(function (it) { activeIO.observe(it); });
-  }
-
-  // 7) Timeline cards: tap-to-flip on touch / non-hover devices -------------
-  //    (desktop keeps the CSS :hover flip). One 360° spin per tap, then back.
-  var hoverCapable = window.matchMedia && window.matchMedia("(hover: hover)").matches;
-  if (!reduceMotion && !hoverCapable) {
-    document.querySelectorAll(".tl-card").forEach(function (card) {
-      var inner = card.querySelector(".tl-card-inner");
-      if (!inner) return;
-      card.addEventListener("click", function () {
-        if (inner.classList.contains("flipping")) return;   // ignore taps mid-spin
-        inner.classList.add("flipping");
-      });
-      inner.addEventListener("animationend", function () {
-        inner.classList.remove("flipping");                 // restore default front
-      });
-    });
-  }
-
-  // 8) Gallery — floating memory orbs, tilt/ripple, lightbox, Three.js depth
-  var gallery = document.getElementById("gallery");
-  var galleryInner = document.getElementById("galleryInner");
-  var orbsField = document.getElementById("orbsField");
-  var orbs = orbsField ? Array.prototype.slice.call(orbsField.querySelectorAll(".orb")) : [];
-  var hoverCap = window.matchMedia && window.matchMedia("(hover: hover)").matches;
-
-  // run float/ring animations only while the gallery is on screen
-  if (gallery && "IntersectionObserver" in window && !reduceMotion) {
-    var atmosIO = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) { gallery.classList.toggle("atmos-live", e.isIntersecting); });
-    }, { threshold: 0 });
-    atmosIO.observe(gallery);
-  } else if (gallery) {
-    gallery.classList.add("atmos-live");
-  }
-
-  // venue: run the route-line + ambient animations only while it is on screen
+  // 6) venue: run the route-line + ambient animations only while it is on screen
   var venueEl = document.getElementById("venue");
   if (venueEl && "IntersectionObserver" in window && !reduceMotion) {
     new IntersectionObserver(function (entries) {
@@ -226,7 +236,7 @@
     vAmbient.appendChild(vFrag);
   }
 
-  // 9) Finale — live countdown, ambient, scroll-to-top ----------------------
+  // 7) Finale — live countdown, ambient, scroll-to-top ----------------------
   var cdDays = document.getElementById("cdDays");
   if (cdDays) {
     var cdHours = document.getElementById("cdHours");
@@ -275,6 +285,29 @@
     finAmbient.appendChild(fFrag);
   }
 
+  // background-music toggle — reflects whatever state bgMusic is actually
+  // in (it may have been blocked from autoplaying even after the seal tap
+  // on some browsers, so this doesn't just assume it's playing)
+  var musicToggle = document.getElementById("musicToggle");
+  if (musicToggle && bgMusic) {
+    musicToggle.addEventListener("click", function () {
+      if (bgMusic.paused) {
+        bgMusic.play().catch(function () { });
+      } else {
+        bgMusic.pause();
+      }
+    });
+    var syncMusicToggle = function () {
+      var playing = !bgMusic.paused;
+      musicToggle.classList.toggle("muted", !playing);
+      musicToggle.setAttribute("aria-pressed", String(playing));
+      musicToggle.setAttribute("aria-label", playing ? "Pause background music" : "Play background music");
+    };
+    bgMusic.addEventListener("play", syncMusicToggle);
+    bgMusic.addEventListener("pause", syncMusicToggle);
+    syncMusicToggle();
+  }
+
   // scroll-to-top button: appears once the hero has scrolled away
   var scrollTopBtn = document.getElementById("scrollTop");
   if (scrollTopBtn) {
@@ -291,199 +324,4 @@
     }
   }
 
-  // reveal header, then the orbs
-  var galleryRevealed = false;
-  function revealGallery() {
-    if (galleryRevealed) return;
-    galleryRevealed = true;
-    if (galleryInner) galleryInner.classList.add("revealed");
-    window.setTimeout(function () { if (orbsField) orbsField.classList.add("revealed"); }, reduceMotion ? 40 : 450);
-  }
-  if (gallery) {
-    if ("IntersectionObserver" in window) {
-      var gIO = new IntersectionObserver(function (entries) {
-        entries.forEach(function (e) { if (e.isIntersecting) { revealGallery(); gIO.unobserve(e.target); } });
-      }, { threshold: 0, rootMargin: "0px 0px -12% 0px" });
-      gIO.observe(gallery);
-    } else {
-      revealGallery();
-    }
-  }
-
-  // cursor tilt (desktop) — gently rotate each orb toward the pointer
-  if (hoverCap && !reduceMotion) {
-    orbs.forEach(function (orb) {
-      var tilt = orb.querySelector(".orb-tilt");
-      if (!tilt) return;
-      orb.addEventListener("pointermove", function (ev) {
-        var r = orb.getBoundingClientRect();
-        var px = (ev.clientX - r.left) / r.width - 0.5;   // -0.5 .. 0.5
-        var py = (ev.clientY - r.top) / r.height - 0.5;
-        tilt.style.setProperty("--ry", (px * 16).toFixed(1) + "deg");
-        tilt.style.setProperty("--rx", (-py * 16).toFixed(1) + "deg");
-      });
-      orb.addEventListener("pointerleave", function () {
-        tilt.style.setProperty("--ry", "0deg");
-        tilt.style.setProperty("--rx", "0deg");
-      });
-    });
-  }
-
-  // fullscreen lightbox viewer
-  var lb = document.getElementById("lightbox");
-  if (lb && orbs.length) {
-    var lbImg = document.getElementById("lbImg");
-    var lbCount = document.getElementById("lbCount");
-    var idx = 0;
-
-    function orbImgSrc(i) {
-      var im = orbs[i].querySelector("img");
-      return im ? im.getAttribute("src") : "";
-    }
-    function showAt(i) {
-      idx = (i + orbs.length) % orbs.length;
-      // use a larger version for the fullscreen view
-      lbImg.src = orbImgSrc(idx).replace(/w=\d+/, "w=1400");
-      var im = orbs[idx].querySelector("img");
-      lbImg.alt = im ? (im.alt || "") : "";
-      if (lbCount) lbCount.textContent = (idx + 1) + " / " + orbs.length;
-    }
-    function openLb(i) {
-      showAt(i);
-      lb.classList.add("open");
-      lb.setAttribute("aria-hidden", "false");
-      document.body.classList.add("no-scroll");
-    }
-    function closeLb() {
-      lb.classList.remove("open");
-      lb.setAttribute("aria-hidden", "true");
-      document.body.classList.remove("no-scroll");
-    }
-
-    orbs.forEach(function (orb, i) {
-      orb.addEventListener("click", function () {
-        if (!hoverCap) {   // mobile: soft ripple, then open
-          var ripple = document.createElement("span");
-          ripple.className = "orb-ripple";
-          orb.appendChild(ripple);
-          ripple.addEventListener("animationend", function () {
-            if (ripple.parentNode) ripple.parentNode.removeChild(ripple);
-          });
-          window.setTimeout(function () { openLb(i); }, 160);
-        } else {
-          openLb(i);
-        }
-      });
-    });
-    document.getElementById("lbClose").addEventListener("click", closeLb);
-    document.getElementById("lbPrev").addEventListener("click", function () { showAt(idx - 1); });
-    document.getElementById("lbNext").addEventListener("click", function () { showAt(idx + 1); });
-    lb.addEventListener("click", function (e) { if (e.target === lb) closeLb(); });
-
-    document.addEventListener("keydown", function (e) {
-      if (!lb.classList.contains("open")) return;
-      if (e.key === "Escape") closeLb();
-      else if (e.key === "ArrowLeft") showAt(idx - 1);
-      else if (e.key === "ArrowRight") showAt(idx + 1);
-    });
-
-    // swipe: horizontal to navigate, downward to close
-    var sx = 0, sy = 0;
-    lb.addEventListener("touchstart", function (e) {
-      sx = e.touches[0].clientX; sy = e.touches[0].clientY;
-    }, { passive: true });
-    lb.addEventListener("touchend", function (e) {
-      var dx = e.changedTouches[0].clientX - sx;
-      var dy = e.changedTouches[0].clientY - sy;
-      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) showAt(idx + (dx < 0 ? 1 : -1));
-      else if (dy > 70 && Math.abs(dy) > Math.abs(dx)) closeLb();
-    }, { passive: true });
-  }
-
-  // ---- Three.js depth layer (optional, lightweight, viewport-gated) ----
-  function initGalleryThree() {
-    var canvas = document.getElementById("galleryThree");
-    if (!canvas || !gallery || reduceMotion || !window.THREE) return;
-
-    var THREE = window.THREE;
-    var w = gallery.clientWidth, h = gallery.clientHeight;
-    var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-    renderer.setSize(w, h, false);
-
-    var scene = new THREE.Scene();
-    var camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
-    camera.position.z = 14;
-
-    var group = new THREE.Group();
-    scene.add(group);
-
-    // a few translucent glass rings
-    var ringMat = new THREE.MeshBasicMaterial({ color: 0xc9a86a, transparent: true, opacity: 0.28 });
-    var ringMat2 = new THREE.MeshBasicMaterial({ color: 0xc9a2b6, transparent: true, opacity: 0.22 });
-    var rings = [];
-    for (var r = 0; r < 4; r++) {
-      var geo = new THREE.TorusGeometry(3 + r * 1.6, 0.05, 8, 90);
-      var m = new THREE.Mesh(geo, r % 2 ? ringMat2 : ringMat);
-      m.position.set((r - 1.5) * 3, (r % 2 ? 1 : -1) * 2, -r * 2);
-      m.rotation.x = Math.random() * Math.PI;
-      m.rotation.y = Math.random() * Math.PI;
-      group.add(m);
-      rings.push(m);
-    }
-
-    // soft floating particles with depth
-    var pGeo = new THREE.BufferGeometry();
-    var COUNT = 70, pos = new Float32Array(COUNT * 3);
-    for (var i = 0; i < COUNT; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 26;
-      pos[i * 3 + 1] = (Math.random() - 0.5) * 16;
-      pos[i * 3 + 2] = (Math.random() - 0.5) * 12;
-    }
-    pGeo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-    var pMat = new THREE.PointsMaterial({ color: 0xffe9c2, size: 0.12, transparent: true, opacity: 0.7, depthWrite: false });
-    var points = new THREE.Points(pGeo, pMat);
-    scene.add(points);
-
-    var mx = 0, my = 0, tmx = 0, tmy = 0, visible = false, raf = 0;
-    window.addEventListener("pointermove", function (e) {
-      tmx = (e.clientX / window.innerWidth - 0.5);
-      tmy = (e.clientY / window.innerHeight - 0.5);
-    }, { passive: true });
-
-    function resize() {
-      w = gallery.clientWidth; h = gallery.clientHeight;
-      renderer.setSize(w, h, false);
-      camera.aspect = w / h; camera.updateProjectionMatrix();
-    }
-    window.addEventListener("resize", resize);
-
-    function render() {
-      raf = 0;
-      if (!visible) return;                 // paused when off-screen
-      mx += (tmx - mx) * 0.04; my += (tmy - my) * 0.04;   // eased parallax
-      group.rotation.y += 0.0016;
-      group.rotation.x = my * 0.3;
-      group.position.x = mx * 1.6;
-      points.rotation.y += 0.0006;
-      camera.position.x = mx * 1.2;
-      camera.lookAt(0, 0, 0);
-      renderer.render(scene, camera);
-      raf = requestAnimationFrame(render);
-    }
-
-    if ("IntersectionObserver" in window) {
-      new IntersectionObserver(function (entries) {
-        entries.forEach(function (e) {
-          visible = e.isIntersecting;
-          if (visible && !raf) raf = requestAnimationFrame(render);
-        });
-      }, { threshold: 0 }).observe(gallery);
-    } else {
-      visible = true; raf = requestAnimationFrame(render);
-    }
-  }
-  // Three.js is loaded with `defer`, so init once everything is ready
-  if (document.readyState === "complete") initGalleryThree();
-  else window.addEventListener("load", initGalleryThree);
 })();
