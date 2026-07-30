@@ -127,6 +127,7 @@
       intro.classList.add("opening");
       window.setTimeout(function () {
         intro.classList.add("dismissed");
+        intro.classList.add("closed");
         body.classList.remove("locked");
         startHeroReveal();
       }, 360);
@@ -136,26 +137,36 @@
     // Step 1 — a quick press on the intact seal
     waxSeal.classList.add("pressing");
 
-    // Step 2 — the flap cracks open a small amount in 3D (1.6s, a bit
-    // slower/more deliberate than a quick snap). The envelope's back panel
-    // (env-base) never moves at all, at any point.
+    var PRESS_DELAY = 160;
+    var FLAP_OPEN_DURATION = 4000;   // slow, unhurried full swing (see .env-flap)
+    var BASE_FALL_DELAY = 250;       // small lag before env-base follows the flap open
+
+    // Step 2 — the top flap begins its full 4s swing.
     window.setTimeout(function () {
       waxSeal.classList.remove("pressing");
       intro.classList.add("opening");
       body.classList.remove("locked");
-    }, 160);
+    }, PRESS_DELAY);
 
-    // Step 3 — start fading the whole overlay away (flap + still-static
-    // base) slightly BEFORE the flap's own lift finishes, so the fade
-    // overlaps its tail motion instead of waiting for the flap to first
-    // glide to a complete stop and only then begin fading — that dead
-    // stop-then-fade handoff was reading as a stutter/pause. Overlapping
-    // them means the flap is still visibly lifting as it dissolves into
-    // the hero, so the reveal reads as one continuous motion.
+    // Step 2b — the envelope body (env-base) follows shortly after, with a
+    // small lag rather than starting at the exact same instant as the
+    // flap — gives the top a brief head start before the bottom begins
+    // its own slow fall. See .intro.closed / .env-base in styles.css.
+    window.setTimeout(function () {
+      intro.classList.add("closed");
+    }, PRESS_DELAY + BASE_FALL_DELAY);
+
+    // Step 3 — the flap reaches its closing stage. Note the flap is
+    // hinged flat (backface-visibility: hidden), so it visually vanishes
+    // the instant it swings past 90deg — the HALFWAY point of its 4s
+    // rotation (the transform's easing is symmetric, so 50% time really
+    // is 50% rotation). Its opacity fade here is just a backstop (it's
+    // already invisible from the rotation alone by this point) — the hero
+    // starts revealing here too.
     window.setTimeout(function () {
       intro.classList.add("dismissed");
       startHeroReveal();
-    }, 160 + 1600 - 300);
+    }, PRESS_DELAY + FLAP_OPEN_DURATION / 2);
   }
 
   if (waxSeal) {

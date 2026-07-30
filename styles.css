@@ -931,7 +931,7 @@ body.locked {
   font-size: clamp(11px, 1.6vw, 14px);
   color: #88657f;
   padding-left: .46em;
-  margin-bottom: .6em;
+  margin-bottom: 3em;
 }
 
 .v-heading {
@@ -939,7 +939,7 @@ body.locked {
   font-weight: 400;
   color: #88657f;
   font-size: clamp(38px, 6.4vw, 70px);
-  line-height: 1.03;
+  line-height: 1.2;
   margin-bottom: .4em;
 }
 
@@ -1692,7 +1692,7 @@ body.locked {
   font-size: clamp(11px, 1.6vw, 14px);
   color: #88657f;
   padding-left: .46em;
-  margin-bottom: .7em;
+  margin-bottom: 3em;
 }
 
 .fin-heading {
@@ -1700,7 +1700,7 @@ body.locked {
   font-weight: 400;
   color: #88657f;
   font-size: clamp(38px, 6.4vw, 72px);
-  line-height: 1.05;
+  line-height: 1.2;
   margin-bottom: .45em;
 }
 
@@ -2369,17 +2369,19 @@ body.locked {
      Without this, the fixed overlay itself was transparent during that
      gap, so the real #hero sitting in normal flow underneath it flashed
      into view first on a fresh/cold-cache load, before the envelope
-     artwork popped in over it — this veil closes that gap. env-base never
-     moves; once the flap has cracked open its small amount, the opacity
-     transition below fades the entire overlay (veil included) away once
-     .dismissed lands, handing the hero the full screen. */
+     artwork popped in over it — this veil closes that gap. env-base starts
+     falling (.closed) shortly after the flap starts swinging open
+     (.opening) — a short head start for the top before the bottom
+     follows — and the flap itself only dissolves (.dismissed) once its
+     rotation carries it past 90deg, handing the hero the full screen. */
   background-color: #ded9f1;
-  /* opacity fade slowed from .3s to .9s — at .3s the still, motionless
-     env-base (envelopBottom.png) read as an abrupt cut once the flap's own
-     transform-driven motion stopped masking it; a longer fade lets it
-     dissolve away instead of snapping out */
-  transition: opacity .9s ease, visibility 0s linear .9s, background-color .5s ease;
-  will-change: opacity;
+  /* the overlay itself doesn't fade on its own — script.js adds .closed
+     shortly after .opening (BASE_FALL_DELAY), so env-base's fall trails
+     the flap's swing slightly; the base's fall (2s) roughly lines up with
+     the flap passing 90deg and disappearing (half of its 4s swing), so
+     this delay just matches that fall duration before the overlay drops
+     out of layout/interaction entirely */
+  transition: visibility 0s linear 2s, background-color .5s ease;
 }
 
 /* the moment the flap starts lifting, stop the whole overlay from
@@ -2394,8 +2396,19 @@ body.locked {
   background-color: transparent;
 }
 
+/* the flap has swung past 90deg and dissolves the rest of the way away
+   (added at the halfway point of its rotation, shortly after .closed below
+   has already started the envelope body falling) */
 .intro.dismissed {
-  opacity: 0;
+  pointer-events: none;
+}
+
+/* added a short beat after .opening (BASE_FALL_DELAY in script.js) — this
+   is what starts the envelope body falling (.intro.closed .env-base
+   below), trailing the flap's swing slightly rather than starting in the
+   exact same instant; once its fall completes the whole overlay is
+   hidden for good */
+.intro.closed {
   visibility: hidden;
   pointer-events: none;
 }
@@ -2483,11 +2496,11 @@ body.locked {
   50%      { opacity: .9; }
 }
 
-/* ---- envelope body — always stays put. It never opens, rotates, or
-   moves at any point in the sequence; only the top flap animates. Once
-   the flap has lifted its small amount, the whole .intro overlay (base
-   included) simply fades out via .intro.dismissed so the hero takes over
-   the full screen underneath it. ---- */
+/* ---- envelope body — script.js adds .closed a short beat after .opening
+   (BASE_FALL_DELAY), so this element starts falling away downward (see
+   the transition/closed rule further down) just after the top flap
+   starts swinging open — a brief head start for the top, rather than the
+   body waiting for the flap to fully clear first. ---- */
 .env-base {
   position: absolute;
   inset: 0;
@@ -2509,7 +2522,7 @@ body.locked {
      screens the rounding left a hairline gap at the seam, so this scale
      carries extra buffer (was 1.08) purely to swallow that device-to-
      device variance; the open/close choreography itself is unchanged. */
-  transform: scale(1.16) rotateX(0deg);
+  transform: translateY(0) scale(1.16) rotateX(0deg);
   transform-origin: 50% 100%;   /* hinge at the bottom edge, mirroring the flap's top hinge */
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
@@ -2517,8 +2530,21 @@ body.locked {
      transformed element's edge — transparent so it's invisible either way */
   outline: 1px solid transparent;
   filter: drop-shadow(0 0 0 rgba(70, 58, 110, 0));
-  /* no transition here — the base has nothing to animate to; it stays in
-     this exact resting transform for the entire open sequence */
+  /* only animates once .intro.closed lands (see below, added a short beat
+     after .intro.opening), when it drops away instead of fading */
+  transition: transform 2s cubic-bezier(.55, 0, .85, .35);
+  will-change: transform;
+}
+
+/* ---- closed: added shortly after .opening, so this fall trails the
+   flap's swing slightly rather than starting in lockstep — the envelope
+   body slides straight down and off the bottom of the screen, a slow,
+   gravity-like drop (eased in, so it starts gently and gathers speed like
+   something actually falling) instead of dissolving in place. The
+   overlay's own overflow:hidden clips it the instant it passes the
+   viewport edge. */
+.intro.closed .env-base {
+  transform: translateY(160%) scale(1.16) rotateX(0deg);
 }
 
 /* desktop: nudge the envelope body's cover-crop up slightly so it sits a
@@ -2548,10 +2574,15 @@ body.locked {
   /* classic fix for the hairline seam some mobile GPUs render along a
      transformed element's edge — transparent so it's invisible either way */
   outline: 1px solid transparent;
-  /* steady ease-in-out lift — the flap only cracks open a small amount,
-     it never swings away, but this is paced a bit more slowly/deliberately
-     than a quick snap */
-  transition: transform 1.6s cubic-bezier(.42, 0, .58, 1), filter 1.6s ease;
+  /* slow, unhurried lift — the flap swings fully open (hinged at the top,
+     rotating up and away past vertical until its front face turns away
+     from the viewer and backface-visibility hides it); 4s so the open
+     itself reads as gradual rather than a quick snap. Keep this in sync
+     with FLAP_OPEN_DURATION in script.js — it times the .dismissed
+     trigger off half of this same duration (the point the rotation passes
+     90deg). The opacity fade (the flap's own dissolve, once past that
+     point) stays a separate, shorter 1s — see .intro.dismissed below. */
+  transition: transform 4s cubic-bezier(.42, 0, .58, 1), filter 4s ease, opacity 1s ease;
   will-change: transform;
   /* contact shadow the lifted flap casts onto the envelope body beneath it;
      filter (not box-shadow) so the shadow hugs the flap's actual lace
@@ -2559,12 +2590,20 @@ body.locked {
   filter: drop-shadow(0 0 0 rgba(70, 58, 110, 0));
 }
 
-/* ---- OPEN STATE: flap only cracks open a small amount toward the
-   viewer — a peek, not a full swing — then the whole overlay (this flap
-   included) fades away via .intro.dismissed so the hero fills the
-   screen. The envelope body (.env-base) never moves at all. */
+/* the flap has swung past 90deg (backface-visibility already hides it at
+   this point) and finishes dissolving away as a backstop; the envelope
+   body has been falling since .opening/.closed landed together at the
+   very start (see .intro.closed .env-base above) */
+.intro.dismissed .env-flap {
+  opacity: 0;
+}
+
+/* ---- OPEN STATE: flap swings fully open, hinged at the top — a full
+   180deg lift up and back rather than a small peek — then it dissolves
+   away via .intro.dismissed while the envelope body (.env-base) drops
+   away downward beneath it, so the hero fills the screen. */
 .intro.opening .env-flap {
-  transform: scale(1.08) rotateX(64deg);
+  transform: scale(1.08) rotateX(180deg);
   filter: drop-shadow(0 30px 42px rgba(70, 58, 110, .58));
 }
 .intro.opening .env-light {
